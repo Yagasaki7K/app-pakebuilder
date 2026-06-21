@@ -6,7 +6,7 @@
 
 Pake Application Hub is an open-source automation repository that builds and publishes installable desktop wrappers for selected web applications. It is created and maintained by **Yagasaki7K**.
 
-The repository combines GitHub Actions, Pake, and a modern dependency-free single page application so users can browse generated installers from one web catalog.
+The repository combines GitHub Actions, Pake.
 
 ## Project Overview
 
