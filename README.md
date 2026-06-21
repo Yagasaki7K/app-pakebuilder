@@ -10,7 +10,7 @@ The repository combines GitHub Actions, Pake.
 
 ## Project Overview
 
-This project provides a repeatable release pipeline for web applications that are useful as desktop apps. Each supported application has its own workflow under `.github/workflows` and each workflow builds native installer artifacts for Windows, Linux, and macOS.
+This project provides a repeatable release pipeline for web applications that are useful as desktop apps. Each supported application has its own workflow under `.github/workflows` and each workflow builds native installer artifacts for Windows and Linux.
 
 Final generated installers are stored in `/projects`. Temporary workflow files are stored in `/artifacts` and are not part of the published application catalog.
 
@@ -27,7 +27,7 @@ Final generated installers are stored in `/projects`. Temporary workflow files a
 
 ## What is Pake
 
-[Pake](https://github.com/tw93/Pake) is an open-source project that turns web pages into desktop applications with a command-line workflow. The Pake project describes itself as a way to turn any webpage into a desktop app with one command and supports macOS, Windows, and Linux.
+[Pake](https://github.com/tw93/Pake) is an open-source project that turns web pages into desktop applications with a command-line workflow. The Pake project describes itself as a way to turn any webpage into a desktop app with one command and supports Windows and Linux.
 
 Pake is built around the Tauri ecosystem, which uses Rust and native webview capabilities to package web experiences as desktop applications. This repository uses the Pake CLI to wrap public web application URLs into native desktop installers.
 
