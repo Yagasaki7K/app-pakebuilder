@@ -29,7 +29,7 @@ jobs:
         run: pake --version
       - name: Build Windows installer
         shell: bash
-        run: pake "https://www.onigirihardcore.vercel.app" --name "Onigiri Hardcore"
+        run: pake "https://onigirihardcore.vercel.app" --name "Onigiri Hardcore"
       - name: Discover and collect Windows installer
         shell: bash
         run: scripts/ci/collect-pake-artifacts.sh --kind windows --search-root . --output-dir "artifacts/windows"
@@ -62,7 +62,7 @@ jobs:
       - name: Verify Pake CLI
         run: pake --version
       - name: Build Linux installer
-        run: pake "https://www.onigirihardcore.vercel.app" --name "Onigiri Hardcore" --targets deb
+        run: pake "https://onigirihardcore.vercel.app" --name "Onigiri Hardcore" --targets deb
       - name: Discover and collect Linux installer
         run: scripts/ci/collect-pake-artifacts.sh --kind linux --search-root . --output-dir "artifacts/linux"
       - name: Upload Linux installer
