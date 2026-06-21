@@ -78,36 +78,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # garante todo o histórico para commit/push
+          fetch-depth: 0
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
-          merge-multiple: true
 
-      # 🔍 Passos de depuração
-      - name: List downloaded artifacts
-        run: |
-          echo "Conteúdo de ./artifacts:"
-          ls -la ./artifacts || echo "Diretório vazio ou não existe"
-
-      - name: Create projects folder and copy files
+      - name: Copy files from subfolders
         run: |
           mkdir -p projects
-          # Se houver subpastas, copia de lá também
-          if [ -d "./artifacts" ]; then
-            find ./artifacts -type f -name "*.msi" -o -name "*.dmg" -o -name "*.deb" | while read file; do
-              cp "$file" ./projects/
-            done
-          fi
-          echo "Arquivos copiados para ./projects:"
-          ls -la ./projects || echo "Nenhum arquivo copiado"
+          cp ./artifacts/windows-msi/*.msi ./projects/ 2>/dev/null || true
+          cp ./artifacts/macos-dmg/*.dmg ./projects/ 2>/dev/null || true
+          cp ./artifacts/linux-deb/*.deb ./projects/ 2>/dev/null || true
+          ls -la ./projects
 
       - name: Commit and push installers
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase  # evita conflitos
           git add projects/
           git status
           git diff --staged --quiet || git commit -m "Update installers [skip ci]"
