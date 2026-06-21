@@ -5,95 +5,92 @@ on:
     branches:
       - main
       - master
-
   workflow_dispatch:
-
   schedule:
     - cron: '0 0 1 */2 *'
 
-jobs:
+permissions:
+  contents: read
 
+concurrency:
+  group: pake-installers-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+  APP_URL: https://discord.com
+  PROJECTS_DIR: projects
+  ARTIFACT_STAGING_DIR: artifacts
+
+jobs:
   build-windows:
+    name: Build Windows MSI
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install Pake
+      - name: Install Pake CLI
+        shell: bash
         run: npm install -g pake-cli
 
-      - name: Build MSI
-        run: pake https://discord.com --targets msi
+      - name: Build Windows installer
+        shell: bash
+        run: pake "$APP_URL" --targets msi
 
-      - name: Collect MSI files
+      - name: Collect Windows installer
         shell: bash
         run: |
-          mkdir -p artifacts
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_STAGING_DIR"
 
-          find . -type f -name "*.msi" -exec cp {} artifacts/ \;
+          echo "Workspace after Windows build:"
+          find . -maxdepth 5 -print | sort
 
-          echo "Collected files:"
-          ls -la artifacts
+          mapfile -d '' files < <(find . -type f -name '*.msi' -not -path './.git/*' -print0)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "Pake did not generate a Windows .msi installer."
+            exit 1
+          fi
 
-      - name: Upload MSI
-        uses: actions/upload-artifact@v4
+          for file in "${files[@]}"; do
+            cp "$file" "$ARTIFACT_STAGING_DIR/"
+          done
+
+          echo "Collected Windows artifacts:"
+          find "$ARTIFACT_STAGING_DIR" -maxdepth 2 -print | sort
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v7
         with:
           name: windows-msi
           path: artifacts/*.msi
-
-  build-macos:
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Pake
-        run: npm install -g pake-cli
-
-      - name: Build macOS packages
-        run: |
-          pake https://discord.com --targets app
-          pake https://discord.com --targets dmg
-
-      - name: Collect macOS files
-        run: |
-          mkdir -p artifacts
-
-          find . -type d -name "*.app" -exec cp -R {} artifacts/ \;
-          find . -type f -name "*.dmg" -exec cp {} artifacts/ \;
-
-          echo "Collected files:"
-          ls -la artifacts
-
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-builds
-          path: artifacts/*
+          if-no-files-found: error
 
   build-linux:
+    name: Build Linux DEB
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install Linux dependencies
         run: |
-          sudo apt update
-
-          sudo apt install -y \
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
             build-essential \
             libssl-dev \
             libgtk-3-dev \
@@ -103,104 +100,228 @@ jobs:
             libpango1.0-dev \
             libcairo2-dev
 
-      - name: Install Pake
+      - name: Install Pake CLI
         run: npm install -g pake-cli
 
-      - name: Build DEB
-        run: pake https://discord.com --targets deb
+      - name: Build Linux installer
+        run: pake "$APP_URL" --targets deb
 
-      - name: Collect DEB files
+      - name: Collect Linux installer
         run: |
-          mkdir -p artifacts
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_STAGING_DIR"
 
-          find . -type f -name "*.deb" -exec cp {} artifacts/ \;
+          echo "Workspace after Linux build:"
+          find . -maxdepth 5 -print | sort
 
-          echo "Collected files:"
-          ls -la artifacts
+          mapfile -d '' files < <(find . -type f -name '*.deb' -not -path './.git/*' -print0)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "Pake did not generate a Linux .deb installer."
+            exit 1
+          fi
 
-      - name: Upload DEB
-        uses: actions/upload-artifact@v4
+          for file in "${files[@]}"; do
+            cp "$file" "$ARTIFACT_STAGING_DIR/"
+          done
+
+          echo "Collected Linux artifacts:"
+          find "$ARTIFACT_STAGING_DIR" -maxdepth 2 -print | sort
+
+      - name: Upload Linux installer
+        uses: actions/upload-artifact@v7
         with:
           name: linux-deb
           path: artifacts/*.deb
+          if-no-files-found: error
+
+  build-macos:
+    name: Build macOS APP and DMG
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Pake CLI
+        run: npm install -g pake-cli
+
+      - name: Build macOS application bundle and disk image
+        run: |
+          set -euo pipefail
+          pake "$APP_URL" --targets app
+          pake "$APP_URL" --targets dmg
+
+      - name: Collect macOS artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_STAGING_DIR"
+
+          echo "Workspace after macOS build:"
+          find . -maxdepth 5 -print | sort
+
+          mapfile -d '' dmg_files < <(find . -type f -name '*.dmg' -not -path './.git/*' -print0)
+          mapfile -d '' app_dirs < <(find . -type d -name '*.app' -not -path './.git/*' -print0)
+
+          if [ "${#dmg_files[@]}" -eq 0 ]; then
+            echo "Pake did not generate a macOS .dmg disk image."
+            exit 1
+          fi
+
+          if [ "${#app_dirs[@]}" -eq 0 ]; then
+            echo "Pake did not leave a macOS .app bundle in the workspace."
+            echo "A .dmg can contain an app bundle internally, but this workflow requires a separately collectible .app when available."
+            exit 1
+          fi
+
+          for file in "${dmg_files[@]}"; do
+            cp "$file" "$ARTIFACT_STAGING_DIR/"
+          done
+
+          for app in "${app_dirs[@]}"; do
+            ditto "$app" "$ARTIFACT_STAGING_DIR/$(basename "$app")"
+          done
+
+          echo "Collected macOS artifacts:"
+          find "$ARTIFACT_STAGING_DIR" -maxdepth 4 -print | sort
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-builds
+          path: artifacts
+          if-no-files-found: error
 
   create-release-and-commit:
+    name: Commit projects directory and publish release
     needs:
       - build-windows
-      - build-macos
       - build-linux
-
+      - build-macos
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
 
     steps:
-
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Create projects directory
+      - name: Prepare local directories
         run: |
-          mkdir -p projects
+          set -euo pipefail
+          mkdir -p "$PROJECTS_DIR" "$ARTIFACT_STAGING_DIR" release-assets
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
+          merge-multiple: false
 
-      - name: Debug downloaded files
+      - name: Diagnose downloaded artifacts
         run: |
-          echo "Downloaded artifacts:"
-          find artifacts
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_STAGING_DIR"
+          echo "Downloaded artifacts directory:"
+          find "$ARTIFACT_STAGING_DIR" -maxdepth 6 -print | sort || true
 
-      - name: Copy installers to projects
+      - name: Copy installers into projects
         run: |
-          find artifacts -name "*.msi" -exec cp {} projects/ \;
-          find artifacts -name "*.deb" -exec cp {} projects/ \;
-          find artifacts -name "*.dmg" -exec cp {} projects/ \;
+          set -euo pipefail
+          mkdir -p "$PROJECTS_DIR"
 
-          find artifacts -name "*.app" -exec cp -R {} projects/ \;
+          msi_count=0
+          deb_count=0
+          dmg_count=0
+          app_count=0
 
-          echo "Projects directory:"
-          ls -la projects
+          while IFS= read -r -d '' file; do
+            cp "$file" "$PROJECTS_DIR/"
+            msi_count=$((msi_count + 1))
+          done < <(find "$ARTIFACT_STAGING_DIR" -type f -name '*.msi' -print0)
 
-      - name: Verify installers exist
-        run: |
-          COUNT=$(find projects | wc -l)
+          while IFS= read -r -d '' file; do
+            cp "$file" "$PROJECTS_DIR/"
+            deb_count=$((deb_count + 1))
+          done < <(find "$ARTIFACT_STAGING_DIR" -type f -name '*.deb' -print0)
 
-          if [ "$COUNT" -le 1 ]; then
-            echo "No installers found"
+          while IFS= read -r -d '' file; do
+            cp "$file" "$PROJECTS_DIR/"
+            dmg_count=$((dmg_count + 1))
+          done < <(find "$ARTIFACT_STAGING_DIR" -type f -name '*.dmg' -print0)
+
+          while IFS= read -r -d '' app; do
+            rm -rf "$PROJECTS_DIR/$(basename "$app")"
+            cp -R "$app" "$PROJECTS_DIR/"
+            app_count=$((app_count + 1))
+          done < <(find "$ARTIFACT_STAGING_DIR" -type d -name '*.app' -print0)
+
+          echo "Collected counts:"
+          echo "  MSI: $msi_count"
+          echo "  DEB: $deb_count"
+          echo "  DMG: $dmg_count"
+          echo "  APP: $app_count"
+
+          if [ "$msi_count" -eq 0 ] || [ "$deb_count" -eq 0 ] || [ "$dmg_count" -eq 0 ] || [ "$app_count" -eq 0 ]; then
+            echo "One or more required installer types are missing."
             exit 1
           fi
 
-      - name: Commit installers
+          echo "Projects directory contents:"
+          find "$PROJECTS_DIR" -maxdepth 5 -print | sort
+
+      - name: Prepare release assets
         run: |
+          set -euo pipefail
+          mkdir -p release-assets
+
+          find "$PROJECTS_DIR" -maxdepth 1 -type f \( -name '*.msi' -o -name '*.deb' -o -name '*.dmg' \) -exec cp {} release-assets/ \;
+
+          while IFS= read -r -d '' app; do
+            archive="release-assets/$(basename "$app").zip"
+            (cd "$PROJECTS_DIR" && zip -qry "../$archive" "$(basename "$app")")
+          done < <(find "$PROJECTS_DIR" -maxdepth 1 -type d -name '*.app' -print0)
+
+          echo "Release assets:"
+          find release-assets -maxdepth 2 -type f -print | sort
+
+      - name: Verify projects and release assets
+        run: |
+          set -euo pipefail
+          test "$(find "$PROJECTS_DIR" -maxdepth 1 -type f -name '*.msi' | wc -l)" -gt 0
+          test "$(find "$PROJECTS_DIR" -maxdepth 1 -type f -name '*.deb' | wc -l)" -gt 0
+          test "$(find "$PROJECTS_DIR" -maxdepth 1 -type f -name '*.dmg' | wc -l)" -gt 0
+          test "$(find "$PROJECTS_DIR" -maxdepth 1 -type d -name '*.app' | wc -l)" -gt 0
+          test "$(find release-assets -maxdepth 1 -type f | wc -l)" -gt 0
+
+      - name: Commit generated installers
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add projects/
+          git add "$PROJECTS_DIR/"
 
           if git diff --staged --quiet; then
-            echo "No changes detected"
-            exit 0
+            echo "No generated installer changes to commit."
+          else
+            git commit -m "Update generated installers [skip ci]"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
 
-          git commit -m "Update generated installers [skip ci]"
-
-          git push origin HEAD:${GITHUB_REF_NAME}
-
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
-          files: |
-            projects/**/*.msi
-            projects/**/*.deb
-            projects/**/*.dmg
-            projects/**/*.app/**
+          files: release-assets/*
+          fail_on_unmatched_files: true
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
