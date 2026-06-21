@@ -1,0 +1,174 @@
+name: Build 9GAG Pake Installers
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pake-9gag-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+  APP_NAME: 9gag
+  PROJECTS_DIR: projects
+  ARTIFACTS_DIR: artifacts
+
+jobs:
+  build-windows:
+    name: Build Windows MSI
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Prepare artifact directory
+        shell: bash
+        run: mkdir -p "$ARTIFACTS_DIR/windows"
+      - name: Configure pnpm global bin directory
+        shell: bash
+        run: |
+          echo "PNPM_HOME=$RUNNER_TEMP/pnpm" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/pnpm" >> "$GITHUB_PATH"
+      - name: Install pnpm
+        shell: bash
+        run: npm install -g pnpm
+      - name: Install Pake CLI
+        shell: bash
+        run: pnpm install -g pake-cli
+      - name: Build Windows installer
+        shell: bash
+        run: pake "https://9gag.com" --name "$APP_NAME"
+      - name: Discover and collect Windows installer
+        shell: bash
+        run: scripts/ci/collect-pake-artifacts.sh --kind windows --search-root . --output-dir "$ARTIFACTS_DIR/windows"
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: 9gag-windows-msi
+          path: artifacts/windows/*.msi
+          if-no-files-found: error
+
+  build-linux:
+    name: Build Linux DEB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Prepare artifact directory
+        run: mkdir -p "$ARTIFACTS_DIR/linux"
+      - name: Install Linux dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libpango1.0-dev libcairo2-dev
+      - name: Configure pnpm global bin directory
+        run: |
+          echo "PNPM_HOME=$RUNNER_TEMP/pnpm" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/pnpm" >> "$GITHUB_PATH"
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install Pake CLI
+        run: pnpm install -g pake-cli
+      - name: Build Linux installer
+        run: pake "https://9gag.com" --name "$APP_NAME" --targets deb
+      - name: Discover and collect Linux installer
+        run: scripts/ci/collect-pake-artifacts.sh --kind linux --search-root . --output-dir "$ARTIFACTS_DIR/linux"
+      - name: Upload Linux installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: 9gag-linux-deb
+          path: artifacts/linux/*.deb
+          if-no-files-found: error
+
+  build-macos:
+    name: Build macOS APP and DMG
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Prepare artifact directory
+        run: mkdir -p "$ARTIFACTS_DIR/macos"
+      - name: Configure pnpm global bin directory
+        run: |
+          echo "PNPM_HOME=$RUNNER_TEMP/pnpm" >> "$GITHUB_ENV"
+          echo "$RUNNER_TEMP/pnpm" >> "$GITHUB_PATH"
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install Pake CLI
+        run: pnpm install -g pake-cli
+      - name: Build macOS application bundle and disk image
+        run: pake "https://9gag.com" --name "$APP_NAME"
+      - name: Discover and collect macOS artifacts
+        run: scripts/ci/collect-pake-artifacts.sh --kind macos --search-root . --output-dir "$ARTIFACTS_DIR/macos"
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: 9gag-macos-app-dmg
+          path: artifacts/macos
+          if-no-files-found: error
+
+  publish:
+    name: Commit projects directory and publish release
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prepare local directories
+        run: |
+          set -euo pipefail
+          rm -rf "$ARTIFACTS_DIR"
+          mkdir -p "$PROJECTS_DIR" "$ARTIFACTS_DIR/downloaded"
+          find "$PROJECTS_DIR" -mindepth 1 -maxdepth 1 \( -name '${{ env.APP_NAME }}.*' -o -name '${{ env.APP_NAME }}.app' \) -exec rm -rf {} +
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/downloaded
+          merge-multiple: false
+      - name: Copy verified installers into projects
+        run: |
+          set -euo pipefail
+          find "$ARTIFACTS_DIR/downloaded" -type f \( -name '*.msi' -o -name '*.deb' -o -name '*.dmg' \) -exec cp -f {} "$PROJECTS_DIR/" \;
+          while IFS= read -r -d '' app; do rm -rf "$PROJECTS_DIR/$(basename "$app")"; cp -R "$app" "$PROJECTS_DIR/"; done < <(find "$ARTIFACTS_DIR/downloaded" -type d -name '*.app' -print0)
+      - name: Validate projects directory
+        run: scripts/ci/validate-projects.sh "$PROJECTS_DIR" "$APP_NAME"
+      - name: Commit generated installers
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$PROJECTS_DIR/"
+          if git diff --staged --quiet; then echo "No generated installer changes to commit."; else git commit -m "Update 9GAG installers [skip ci]"; git push origin "HEAD:${{ github.ref_name }}"; fi
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: 9gag-v${{ github.run_number }}
+          name: 9GAG Release v${{ github.run_number }}
+          files: |
+            projects/9gag*.msi
+            projects/9gag*.deb
+            projects/9gag*.dmg
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
