@@ -1,0 +1,19 @@
+name: Build Windows MSI
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm install -g pake-cli
+      - run: pake https://discord.com --targets msi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: discord-msi
+          path: ./*.msi
