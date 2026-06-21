@@ -14,8 +14,9 @@ The repository includes a committed `.env` file with non-secret defaults used by
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `NODE_VERSION` | `24` | Node.js version used by GitHub Actions and local Pake builds. |
+| `NODE_VERSION` | `22` | Node.js version used by GitHub Actions and local Pake builds. |
 | `APP_URL` | `https://discord.com` | Web application URL that Pake wraps into native desktop packages. |
+| `APP_NAME` | `discord` | Stable Pake application name used to produce predictable installer filenames. |
 | `PROJECTS_DIR` | `projects` | Repository-root directory that stores only final generated installers and application bundles. |
 | `ARTIFACTS_DIR` | `artifacts` | Repository-root directory for temporary build output, diagnostics, and GitHub Actions artifact transfer. |
 | `GITHUB_TOKEN` | empty | Secret token used by GitHub release automation. The repository value is intentionally blank. |

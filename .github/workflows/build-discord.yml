@@ -17,8 +17,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: '24'
+  NODE_VERSION: '22'
   APP_URL: https://discord.com
+  APP_NAME: discord
   PROJECTS_DIR: projects
   ARTIFACTS_DIR: artifacts
 
@@ -40,13 +41,17 @@ jobs:
         shell: bash
         run: mkdir -p "$ARTIFACTS_DIR/windows"
 
+      - name: Install pnpm
+        shell: bash
+        run: npm install -g pnpm
+
       - name: Install Pake CLI
         shell: bash
-        run: npm install -g pake-cli
+        run: pnpm install -g pake-cli
 
       - name: Build Windows installer
         shell: bash
-        run: pake "$APP_URL" --targets msi
+        run: pake "$APP_URL" --name "$APP_NAME"
 
       - name: Discover and collect Windows installer
         shell: bash
@@ -89,11 +94,14 @@ jobs:
             libpango1.0-dev \
             libcairo2-dev
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install Pake CLI
-        run: npm install -g pake-cli
+        run: pnpm install -g pake-cli
 
       - name: Build Linux installer
-        run: pake "$APP_URL" --targets deb
+        run: pake "$APP_URL" --name "$APP_NAME" --targets deb
 
       - name: Discover and collect Linux installer
         run: scripts/ci/collect-pake-artifacts.sh --kind linux --search-root . --output-dir "$ARTIFACTS_DIR/linux"
@@ -121,14 +129,14 @@ jobs:
       - name: Prepare artifact directory
         run: mkdir -p "$ARTIFACTS_DIR/macos"
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install Pake CLI
-        run: npm install -g pake-cli
+        run: pnpm install -g pake-cli
 
       - name: Build macOS application bundle and disk image
-        run: |
-          set -euo pipefail
-          pake "$APP_URL" --targets app
-          pake "$APP_URL" --targets dmg
+        run: pake "$APP_URL" --name "$APP_NAME"
 
       - name: Discover and collect macOS artifacts
         run: scripts/ci/collect-pake-artifacts.sh --kind macos --search-root . --output-dir "$ARTIFACTS_DIR/macos"
