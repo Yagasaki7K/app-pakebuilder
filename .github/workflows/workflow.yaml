@@ -1,0 +1,41 @@
+name: Orchestrator - Trigger all workflows
+
+on:
+  workflow_dispatch:       # Manual trigger
+  schedule:
+    # Run on the 1st day of every month at 00:00 UTC
+    - cron: '0 0 1 * *'
+
+jobs:
+  trigger-all:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write          # Needed to trigger workflows via API
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GitHub CLI (if not present)
+        run: |
+          sudo apt update && sudo apt install -y gh || echo "gh already installed"
+
+      - name: Authenticate gh with GITHUB_TOKEN
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: List and trigger all workflows
+        run: |
+          # Get list of workflow IDs and names, excluding this one
+          gh workflow list --limit 100 --json id,name,path | \
+          jq -r '.[] | select(.path != ".github/workflows/workflow.yaml") | "\(.id) - \(.name)"' > workflows.txt
+
+          echo "📋 Workflows to trigger:"
+          cat workflows.txt
+
+          # Trigger each workflow on the current branch
+          while IFS= read -r line; do
+            WF_ID=$(echo "$line" | awk '{print $1}')
+            echo "▶️ Triggering workflow ID: $WF_ID"
+            gh workflow run "$WF_ID" --ref "${{ github.ref_name }}"
+          done < workflows.txt
+
+          echo "✅ All workflows triggered successfully."
