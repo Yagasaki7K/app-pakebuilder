@@ -77,29 +77,48 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # garante todo o histórico para commit/push
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
           merge-multiple: true
 
-      # 👇 EXATAMENTE O TRECHO QUE VOCÊ PEDIU
-      - name: Copy artifacts to project root
+      # 🔍 Passos de depuração
+      - name: List downloaded artifacts
+        run: |
+          echo "Conteúdo de ./artifacts:"
+          ls -la ./artifacts || echo "Diretório vazio ou não existe"
+
+      - name: Create projects folder and copy files
         run: |
           mkdir -p projects
-          cp ./artifacts/* ./projects/ || true
+          # Se houver subpastas, copia de lá também
+          if [ -d "./artifacts" ]; then
+            find ./artifacts -type f -name "*.msi" -o -name "*.dmg" -o -name "*.deb" | while read file; do
+              cp "$file" ./projects/
+            done
+          fi
+          echo "Arquivos copiados para ./projects:"
+          ls -la ./projects || echo "Nenhum arquivo copiado"
+
+      - name: Commit and push installers
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add projects/
-          git diff --staged --quiet || git commit -m "Add installers [skip ci]"
-          git push
+          git status
+          git diff --staged --quiet || git commit -m "Update installers [skip ci]"
+          git push origin HEAD:main
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
           name: "Release v${{ github.run_number }}"
-          files: ./artifacts/*
+          files: ./projects/*
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
