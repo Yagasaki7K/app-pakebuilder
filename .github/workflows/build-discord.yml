@@ -1,58 +1,98 @@
-name: Build and Release Pake installers
+name: Build and Release Pake Installers
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+
   workflow_dispatch:
+
   schedule:
-    # Run at 00:00 on the 1st day of every 2nd month (Jan, Mar, May, ...)
     - cron: '0 0 1 */2 *'
 
 jobs:
+
   build-windows:
     runs-on: windows-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install pake-cli
+
+      - name: Install Pake
         run: npm install -g pake-cli
+
       - name: Build MSI
         run: pake https://discord.com --targets msi
+
+      - name: Collect MSI files
+        shell: bash
+        run: |
+          mkdir -p artifacts
+
+          find . -type f -name "*.msi" -exec cp {} artifacts/ \;
+
+          echo "Collected files:"
+          ls -la artifacts
+
       - name: Upload MSI
         uses: actions/upload-artifact@v4
         with:
           name: windows-msi
-          path: ./*.msi
+          path: artifacts/*.msi
 
   build-macos:
     runs-on: macos-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install pake-cli
+
+      - name: Install Pake
         run: npm install -g pake-cli
-      - name: Build DMG
-        run: pake https://discord.com --targets dmg
-      - name: Upload DMG
+
+      - name: Build macOS packages
+        run: |
+          pake https://discord.com --targets app
+          pake https://discord.com --targets dmg
+
+      - name: Collect macOS files
+        run: |
+          mkdir -p artifacts
+
+          find . -type d -name "*.app" -exec cp -R {} artifacts/ \;
+          find . -type f -name "*.dmg" -exec cp {} artifacts/ \;
+
+          echo "Collected files:"
+          ls -la artifacts
+
+      - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: macos-dmg
-          path: ./*.dmg
+          name: macos-builds
+          path: artifacts/*
 
   build-linux:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install system dependencies
+
+      - name: Install Linux dependencies
         run: |
           sudo apt update
+
           sudo apt install -y \
             build-essential \
             libssl-dev \
@@ -62,73 +102,80 @@ jobs:
             librsvg2-dev \
             libpango1.0-dev \
             libcairo2-dev
-      - name: Install pake-cli
+
+      - name: Install Pake
         run: npm install -g pake-cli
+
       - name: Build DEB
         run: pake https://discord.com --targets deb
+
+      - name: Collect DEB files
+        run: |
+          mkdir -p artifacts
+
+          find . -type f -name "*.deb" -exec cp {} artifacts/ \;
+
+          echo "Collected files:"
+          ls -la artifacts
+
       - name: Upload DEB
         uses: actions/upload-artifact@v4
         with:
           name: linux-deb
-          path: ./*.deb
+          path: artifacts/*.deb
 
   create-release-and-commit:
-    needs: [build-windows, build-macos, build-linux]
+    needs:
+      - build-windows
+      - build-macos
+      - build-linux
+
     runs-on: ubuntu-latest
-    # 👇 REMOVED the conditional so it runs on all events
+
     permissions:
       contents: write
+
     steps:
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Download each artifact into its own subfolder (no merge-multiple)
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-
-      # Diagnostic: show what was downloaded
-      - name: Debug - List downloaded artifacts
-        run: |
-          echo "=== Full directory tree of ./artifacts ==="
-          find ./artifacts -type f || echo "No files found in ./artifacts"
-          echo ""
-          echo "=== Detailed permissions and sizes ==="
-          ls -Rla ./artifacts || echo "Directory does not exist"
-
-      # Copy files from each subfolder to projects/
-      - name: Copy installers to projects folder
+      - name: Create projects directory
         run: |
           mkdir -p projects
 
-          echo "Copying MSI files..."
-          if [ -d "./artifacts/windows-msi" ]; then
-            cp -v ./artifacts/windows-msi/*.msi ./projects/ 2>/dev/null || echo "⚠️ No .msi found"
-          else
-            echo "⚠️ Folder windows-msi does not exist"
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Debug downloaded files
+        run: |
+          echo "Downloaded artifacts:"
+          find artifacts
+
+      - name: Copy installers to projects
+        run: |
+          find artifacts -name "*.msi" -exec cp {} projects/ \;
+          find artifacts -name "*.deb" -exec cp {} projects/ \;
+          find artifacts -name "*.dmg" -exec cp {} projects/ \;
+
+          find artifacts -name "*.app" -exec cp -R {} projects/ \;
+
+          echo "Projects directory:"
+          ls -la projects
+
+      - name: Verify installers exist
+        run: |
+          COUNT=$(find projects | wc -l)
+
+          if [ "$COUNT" -le 1 ]; then
+            echo "No installers found"
+            exit 1
           fi
 
-          echo "Copying DMG files..."
-          if [ -d "./artifacts/macos-dmg" ]; then
-            cp -v ./artifacts/macos-dmg/*.dmg ./projects/ 2>/dev/null || echo "⚠️ No .dmg found"
-          else
-            echo "⚠️ Folder macos-dmg does not exist"
-          fi
-
-          echo "Copying DEB files..."
-          if [ -d "./artifacts/linux-deb" ]; then
-            cp -v ./artifacts/linux-deb/*.deb ./projects/ 2>/dev/null || echo "⚠️ No .deb found"
-          else
-            echo "⚠️ Folder linux-deb does not exist"
-          fi
-
-          echo "=== Final contents of ./projects ==="
-          ls -la ./projects || echo "⚠️ projects folder is empty"
-
-      # Commit and push (only if files exist)
-      - name: Commit and push installers
+      - name: Commit installers
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -136,20 +183,24 @@ jobs:
           git add projects/
 
           if git diff --staged --quiet; then
-            echo "✅ No changes to commit."
-          else
-            git commit -m "Update installers [skip ci]"
-            git push origin HEAD:main
-            echo "✅ Installers committed and pushed."
+            echo "No changes detected"
+            exit 0
           fi
 
-      # Create GitHub Release with the installers
+          git commit -m "Update generated installers [skip ci]"
+
+          git push origin HEAD:${GITHUB_REF_NAME}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
-          name: "Release v${{ github.run_number }}"
-          files: ./projects/*
+          name: Release v${{ github.run_number }}
+          files: |
+            projects/**/*.msi
+            projects/**/*.deb
+            projects/**/*.dmg
+            projects/**/*.app/**
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
