@@ -17,7 +17,7 @@ Final generated installers are stored in `/projects`. Temporary workflow files a
 ## Features
 
 - One GitHub Actions workflow per application.
-- Windows `.msi`, and Linux `.deb` output validation.
+- Windows `.msi` and Linux `.deb` output validation.
 - Automatic cleanup and replacement of outdated installers for the application being rebuilt.
 - GitHub Release publication for generated installers.
 - Dependency-free SPA with responsive desktop and mobile design.
