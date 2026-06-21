@@ -17,7 +17,7 @@ jobs:
         run: npm install -g pake-cli
       - name: Build MSI
         run: pake https://discord.com --targets msi
-      - name: Upload MSI artifact
+      - name: Upload MSI
         uses: actions/upload-artifact@v4
         with:
           name: windows-msi
@@ -32,9 +32,9 @@ jobs:
           node-version: 20
       - name: Install pake-cli
         run: npm install -g pake-cli
-      - name: Build DMG (macOS)
+      - name: Build DMG
         run: pake https://discord.com --targets dmg
-      - name: Upload DMG artifact
+      - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
           name: macos-dmg
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install system dependencies (Tauri)
+      - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y \
@@ -63,7 +63,7 @@ jobs:
         run: npm install -g pake-cli
       - name: Build DEB
         run: pake https://discord.com --targets deb
-      - name: Upload DEB artifact
+      - name: Upload DEB
         uses: actions/upload-artifact@v4
         with:
           name: linux-deb
@@ -82,13 +82,11 @@ jobs:
         with:
           path: ./artifacts
           merge-multiple: true
-      - name: List artifacts (debug)
-        run: ls -R ./artifacts
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: "Release v1.0.0"
+          tag_name: v${{ github.run_number }}
+          name: "Release v${{ github.run_number }}"
           files: ./artifacts/*
           generate_release_notes: true
         env:
