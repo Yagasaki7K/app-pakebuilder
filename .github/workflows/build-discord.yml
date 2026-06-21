@@ -75,7 +75,7 @@ jobs:
   create-release-and-commit:
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # 👇 REMOVED the conditional so it runs on all events
     permissions:
       contents: write
     steps:
@@ -89,7 +89,7 @@ jobs:
         with:
           path: ./artifacts
 
-      # ----- DIAGNOSTIC STEP: show what was downloaded -----
+      # Diagnostic: show what was downloaded
       - name: Debug - List downloaded artifacts
         run: |
           echo "=== Full directory tree of ./artifacts ==="
@@ -98,7 +98,7 @@ jobs:
           echo "=== Detailed permissions and sizes ==="
           ls -Rla ./artifacts || echo "Directory does not exist"
 
-      # ----- Copy files from each subfolder to projects/ -----
+      # Copy files from each subfolder to projects/
       - name: Copy installers to projects folder
         run: |
           mkdir -p projects
@@ -127,16 +127,14 @@ jobs:
           echo "=== Final contents of ./projects ==="
           ls -la ./projects || echo "⚠️ projects folder is empty"
 
-      # ----- Commit and push (only if files exist) -----
+      # Commit and push (only if files exist)
       - name: Commit and push installers
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Add the projects folder (even if empty, but we only commit if files exist)
           git add projects/
 
-          # Check if there are any changes staged
           if git diff --staged --quiet; then
             echo "✅ No changes to commit."
           else
@@ -145,7 +143,7 @@ jobs:
             echo "✅ Installers committed and pushed."
           fi
 
-      # ----- Create GitHub Release with the installers -----
+      # Create GitHub Release with the installers
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
