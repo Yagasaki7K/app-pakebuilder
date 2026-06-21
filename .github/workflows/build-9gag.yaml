@@ -1,10 +1,5 @@
 name: Build 9GAG Pake Installers
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 1 * *'
-
 permissions:
   contents: read
 
