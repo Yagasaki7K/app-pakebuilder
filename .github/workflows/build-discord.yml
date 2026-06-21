@@ -80,29 +80,46 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 1. Baixa todos os artefatos (cada um em sua subpasta)
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
 
-      - name: Copy files from subfolders
+      # 2. Diagnóstico: lista o que foi baixado
+      - name: List downloaded artifacts
+        run: |
+          echo "Estrutura de ./artifacts:"
+          find ./artifacts -type f || echo "Nenhum arquivo encontrado"
+
+      # 3. Cria a pasta projects e copia os instaladores
+      - name: Copy files to projects folder
         run: |
           mkdir -p projects
-          cp ./artifacts/windows-msi/*.msi ./projects/ 2>/dev/null || true
-          cp ./artifacts/macos-dmg/*.dmg ./projects/ 2>/dev/null || true
-          cp ./artifacts/linux-deb/*.deb ./projects/ 2>/dev/null || true
-          ls -la ./projects
+          cp ./artifacts/windows-msi/*.msi ./projects/ 2>/dev/null || echo "⚠️ Nenhum .msi encontrado"
+          cp ./artifacts/macos-dmg/*.dmg ./projects/ 2>/dev/null || echo "⚠️ Nenhum .dmg encontrado"
+          cp ./artifacts/linux-deb/*.deb ./projects/ 2>/dev/null || echo "⚠️ Nenhum .deb encontrado"
+          echo "📂 Conteúdo de ./projects:"
+          ls -la ./projects || echo "⚠️ Pasta projects vazia"
 
+      # 4. Commit e push (com verificação explícita)
       - name: Commit and push installers
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull origin main --rebase  # evita conflitos
-          git add projects/
-          git status
-          git diff --staged --quiet || git commit -m "Update installers [skip ci]"
-          git push origin HEAD:main
 
+          # Adiciona a pasta projects (mesmo que vazia, mas só commita se houver arquivos)
+          git add projects/
+
+          # Verifica se há mudanças para commitar
+          if git diff --staged --quiet; then
+            echo "✅ Nenhuma mudança para commitar."
+          else
+            git commit -m "Update installers [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      # 5. Cria a Release (usando os arquivos de projects)
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
