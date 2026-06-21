@@ -1,4 +1,4 @@
-name: Build Gemini Pake Installers
+name: Build Web Essentials Pake Installers
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: pake-gemini-${{ github.ref }}
+  group: pake-web-essentials-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -34,14 +34,14 @@ jobs:
         run: pake --version
       - name: Build Windows installer
         shell: bash
-        run: pake "https://gemini.google.com" --name "Gemini"
+        run: pake "https://www.webessentials.vercel.app" --name "Web Essentials"
       - name: Discover and collect Windows installer
         shell: bash
         run: scripts/ci/collect-pake-artifacts.sh --kind windows --search-root . --output-dir "artifacts/windows"
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
-          name: gemini-windows-msi
+          name: web-essentials-windows-msi
           path: artifacts/windows/*.msi
           if-no-files-found: error
 
@@ -67,13 +67,13 @@ jobs:
       - name: Verify Pake CLI
         run: pake --version
       - name: Build Linux installer
-        run: pake "https://gemini.google.com" --name "Gemini" --targets deb
+        run: pake "https://www.webessentials.vercel.app" --name "Web Essentials" --targets deb
       - name: Discover and collect Linux installer
         run: scripts/ci/collect-pake-artifacts.sh --kind linux --search-root . --output-dir "artifacts/linux"
       - name: Upload Linux installer
         uses: actions/upload-artifact@v4
         with:
-          name: gemini-linux-deb
+          name: web-essentials-linux-deb
           path: artifacts/linux/*.deb
           if-no-files-found: error
 
@@ -93,7 +93,7 @@ jobs:
           set -euo pipefail
           rm -rf "artifacts"
           mkdir -p "projects" "artifacts/downloaded"
-          find "projects" -mindepth 1 -maxdepth 1 \( -name 'Gemini.*' -o -name 'Gemini.app' \) -exec rm -rf {} +
+          find "projects" -mindepth 1 -maxdepth 1 \( -name 'Web Essentials.*' -o -name 'Web Essentials.app' \) -exec rm -rf {} +
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -105,23 +105,23 @@ jobs:
           find "artifacts/downloaded" -type f \( -name '*.msi' -o -name '*.deb' -o -name '*.dmg' \) -exec cp -f {} "projects/" \;
           while IFS= read -r -d '' app; do rm -rf "projects/$(basename "$app")"; cp -R "$app" "projects/"; done < <(find "artifacts/downloaded" -type d -name '*.app' -print0)
       - name: Validate projects directory
-        run: scripts/ci/validate-projects.sh "projects" "Gemini"
+        run: scripts/ci/validate-projects.sh "projects" "Web Essentials"
       - name: Commit generated installers
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "projects/"
-          if git diff --staged --quiet; then echo "No generated installer changes to commit."; else git commit -m "Update Gemini installers [skip ci]"; git push origin "HEAD:${{ github.ref_name }}"; fi
+          if git diff --staged --quiet; then echo "No generated installer changes to commit."; else git commit -m "Update Web Essentials installers [skip ci]"; git push origin "HEAD:${{ github.ref_name }}"; fi
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: gemini-v${{ github.run_number }}
-          name: Gemini Release v${{ github.run_number }}
+          tag_name: web-essentials-v${{ github.run_number }}
+          name: Web Essentials Release v${{ github.run_number }}
           files: |
-            projects/Gemini*.msi
-            projects/Gemini*.deb
-            projects/Gemini*.dmg
+            projects/web-essentials*.msi
+            projects/web-essentials*.deb
+            projects/web-essentials*.dmg
           fail_on_unmatched_files: true
           generate_release_notes: true
         env:

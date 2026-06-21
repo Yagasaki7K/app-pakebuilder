@@ -34,7 +34,7 @@ jobs:
         run: pake --version
       - name: Build Windows installer
         shell: bash
-        run: pake "https://www.onigirihardcore.com.br" --name "Onigiri Hardcore"
+        run: pake "https://www.onigirihardcore.vercel.app" --name "Onigiri Hardcore"
       - name: Discover and collect Windows installer
         shell: bash
         run: scripts/ci/collect-pake-artifacts.sh --kind windows --search-root . --output-dir "artifacts/windows"
@@ -67,7 +67,7 @@ jobs:
       - name: Verify Pake CLI
         run: pake --version
       - name: Build Linux installer
-        run: pake "https://www.onigirihardcore.com.br" --name "Onigiri Hardcore" --targets deb
+        run: pake "https://www.onigirihardcore.vercel.app" --name "Onigiri Hardcore" --targets deb
       - name: Discover and collect Linux installer
         run: scripts/ci/collect-pake-artifacts.sh --kind linux --search-root . --output-dir "artifacts/linux"
       - name: Upload Linux installer
@@ -75,33 +75,6 @@ jobs:
         with:
           name: onigiri-hardcore-linux-deb
           path: artifacts/linux/*.deb
-          if-no-files-found: error
-
-  build-macos:
-    name: Build macOS APP and DMG
-    runs-on: macos-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Prepare artifact directory
-        run: mkdir -p "artifacts/macos"
-      - name: Install Pake CLI with npm
-        run: npm install --global pake-cli
-      - name: Verify Pake CLI
-        run: pake --version
-      - name: Build macOS application bundle and disk image
-        run: pake "https://www.onigirihardcore.com.br" --name "Onigiri Hardcore"
-      - name: Discover and collect macOS artifacts
-        run: scripts/ci/collect-pake-artifacts.sh --kind macos --search-root . --output-dir "artifacts/macos"
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: onigiri-hardcore-macos-app-dmg
-          path: artifacts/macos
           if-no-files-found: error
 
   publish:

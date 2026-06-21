@@ -77,33 +77,6 @@ jobs:
           path: artifacts/linux/*.deb
           if-no-files-found: error
 
-  build-macos:
-    name: Build macOS APP and DMG
-    runs-on: macos-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Prepare artifact directory
-        run: mkdir -p "artifacts/macos"
-      - name: Install Pake CLI with npm
-        run: npm install --global pake-cli
-      - name: Verify Pake CLI
-        run: pake --version
-      - name: Build macOS application bundle and disk image
-        run: pake "https://www.disneyplus.com" --name "Disney Plus"
-      - name: Discover and collect macOS artifacts
-        run: scripts/ci/collect-pake-artifacts.sh --kind macos --search-root . --output-dir "artifacts/macos"
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: disney-plus-macos-app-dmg
-          path: artifacts/macos
-          if-no-files-found: error
-
   publish:
     name: Commit projects directory and publish release
     needs: [build-windows, build-linux, build-macos]
