@@ -34,13 +34,13 @@ At a high level, Pake receives a web URL and an application name, creates a desk
 Example workflow build command:
 
 ```bash
-pake "https://chatgpt.com" --name "$APP_NAME"
+pake "https://chatgpt.com" --name "ChatGPT"
 ```
 
 Linux builds explicitly request Debian output:
 
 ```bash
-pake "https://chatgpt.com" --name "$APP_NAME" --targets deb
+pake "https://chatgpt.com" --name "ChatGPT" --targets deb
 ```
 
 ## Why Pake Is Used
@@ -184,6 +184,18 @@ Each workflow:
 8. Commits changed generated installers.
 9. Publishes a GitHub Release.
 
+## Workflow Validation
+
+This repository includes validation utilities for release maintenance:
+
+```bash
+npm run audit:workflows
+npm run test:artifact-flow
+npm test
+```
+
+The workflow audit checks every application workflow for hardcoded URLs and Pake project names, verifies that Pake is installed with npm instead of pnpm, and confirms that upload, download, validation, and release steps reference valid repository scripts. The artifact-flow test simulates generated installer files, collects them through the same shell scripts used in CI, copies them into `/projects`, and validates that temporary files remain under `/artifacts`.
+
 ## Release Process
 
 Application workflows are manually runnable with `workflow_dispatch` and also run on a monthly schedule. A successful release job updates `/projects` for the application being built, commits changed generated outputs, and creates a release tagged with the application slug and workflow run number.
@@ -196,8 +208,8 @@ Contributions are welcome. Keep changes focused, use English comments, and prese
 
 - `/projects` is for final generated installers and application bundles.
 - `/artifacts` is for temporary workflow output only.
-- Application URLs must be hardcoded directly in each workflow.
-- Do not add URL-related variables to `.env`.
+- Application URLs and Pake project names must be hardcoded directly in each workflow.
+- Do not add URL-related or application-name variables to `.env` or workflow-level application variables.
 - Do not create a generic application build workflow.
 
 ## Creating New Applications
@@ -209,8 +221,10 @@ To request or add a new application:
 3. Verify the public URL for the application.
 4. Create a workflow named `build-application-name.yaml`.
 5. Use the same structure as the existing application workflows.
-6. Add metadata to `public/applications.json`.
-7. Open a Pull Request.
+6. Install Pake CLI with `npm install --global pake-cli` in the workflow.
+7. Add metadata to `public/applications.json`.
+8. Run `npm test` locally.
+9. Open a Pull Request.
 
 Required workflow naming examples:
 
@@ -226,6 +240,7 @@ Required workflow structure:
 - `build-linux` job for `.deb` output.
 - `build-macos` job for `.dmg` and `.app` output.
 - `publish` job that validates, commits, and releases outputs.
+- No `APP_NAME`, `APP_URL`, `PNPM_HOME`, or `pnpm install -g` usage.
 
 ## Pull Request Guidelines
 

@@ -12,12 +12,6 @@ concurrency:
   group: pake-devscout-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  NODE_VERSION: '22'
-  APP_NAME: devscout
-  PROJECTS_DIR: projects
-  ARTIFACTS_DIR: artifacts
-
 jobs:
   build-windows:
     name: Build Windows MSI
@@ -28,27 +22,22 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '22'
       - name: Prepare artifact directory
         shell: bash
-        run: mkdir -p "$ARTIFACTS_DIR/windows"
-      - name: Configure pnpm global bin directory
+        run: mkdir -p "artifacts/windows"
+      - name: Install Pake CLI with npm
         shell: bash
-        run: |
-          echo "PNPM_HOME=$RUNNER_TEMP/pnpm" >> "$GITHUB_ENV"
-          echo "$RUNNER_TEMP/pnpm" >> "$GITHUB_PATH"
-      - name: Install pnpm
+        run: npm install --global pake-cli
+      - name: Verify Pake CLI
         shell: bash
-        run: npm install -g pnpm
-      - name: Install Pake CLI
-        shell: bash
-        run: pnpm install -g pake-cli
+        run: pake --version
       - name: Build Windows installer
         shell: bash
-        run: pake "https://devscout.com.br" --name "$APP_NAME"
+        run: pake "https://devscout.com.br" --name "DevScout"
       - name: Discover and collect Windows installer
         shell: bash
-        run: scripts/ci/collect-pake-artifacts.sh --kind windows --search-root . --output-dir "$ARTIFACTS_DIR/windows"
+        run: scripts/ci/collect-pake-artifacts.sh --kind windows --search-root . --output-dir "artifacts/windows"
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
         with:
@@ -65,26 +54,22 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '22'
       - name: Prepare artifact directory
-        run: mkdir -p "$ARTIFACTS_DIR/linux"
+        run: mkdir -p "artifacts/linux"
       - name: Install Linux dependencies
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y build-essential libssl-dev libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libpango1.0-dev libcairo2-dev
-      - name: Configure pnpm global bin directory
-        run: |
-          echo "PNPM_HOME=$RUNNER_TEMP/pnpm" >> "$GITHUB_ENV"
-          echo "$RUNNER_TEMP/pnpm" >> "$GITHUB_PATH"
-      - name: Install pnpm
-        run: npm install -g pnpm
-      - name: Install Pake CLI
-        run: pnpm install -g pake-cli
+      - name: Install Pake CLI with npm
+        run: npm install --global pake-cli
+      - name: Verify Pake CLI
+        run: pake --version
       - name: Build Linux installer
-        run: pake "https://devscout.com.br" --name "$APP_NAME" --targets deb
+        run: pake "https://devscout.com.br" --name "DevScout" --targets deb
       - name: Discover and collect Linux installer
-        run: scripts/ci/collect-pake-artifacts.sh --kind linux --search-root . --output-dir "$ARTIFACTS_DIR/linux"
+        run: scripts/ci/collect-pake-artifacts.sh --kind linux --search-root . --output-dir "artifacts/linux"
       - name: Upload Linux installer
         uses: actions/upload-artifact@v4
         with:
@@ -101,21 +86,17 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '22'
       - name: Prepare artifact directory
-        run: mkdir -p "$ARTIFACTS_DIR/macos"
-      - name: Configure pnpm global bin directory
-        run: |
-          echo "PNPM_HOME=$RUNNER_TEMP/pnpm" >> "$GITHUB_ENV"
-          echo "$RUNNER_TEMP/pnpm" >> "$GITHUB_PATH"
-      - name: Install pnpm
-        run: npm install -g pnpm
-      - name: Install Pake CLI
-        run: pnpm install -g pake-cli
+        run: mkdir -p "artifacts/macos"
+      - name: Install Pake CLI with npm
+        run: npm install --global pake-cli
+      - name: Verify Pake CLI
+        run: pake --version
       - name: Build macOS application bundle and disk image
-        run: pake "https://devscout.com.br" --name "$APP_NAME"
+        run: pake "https://devscout.com.br" --name "DevScout"
       - name: Discover and collect macOS artifacts
-        run: scripts/ci/collect-pake-artifacts.sh --kind macos --search-root . --output-dir "$ARTIFACTS_DIR/macos"
+        run: scripts/ci/collect-pake-artifacts.sh --kind macos --search-root . --output-dir "artifacts/macos"
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -137,9 +118,9 @@ jobs:
       - name: Prepare local directories
         run: |
           set -euo pipefail
-          rm -rf "$ARTIFACTS_DIR"
-          mkdir -p "$PROJECTS_DIR" "$ARTIFACTS_DIR/downloaded"
-          find "$PROJECTS_DIR" -mindepth 1 -maxdepth 1 \( -name '${{ env.APP_NAME }}.*' -o -name '${{ env.APP_NAME }}.app' \) -exec rm -rf {} +
+          rm -rf "artifacts"
+          mkdir -p "projects" "artifacts/downloaded"
+          find "projects" -mindepth 1 -maxdepth 1 \( -name 'DevScout.*' -o -name 'DevScout.app' \) -exec rm -rf {} +
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -148,16 +129,16 @@ jobs:
       - name: Copy verified installers into projects
         run: |
           set -euo pipefail
-          find "$ARTIFACTS_DIR/downloaded" -type f \( -name '*.msi' -o -name '*.deb' -o -name '*.dmg' \) -exec cp -f {} "$PROJECTS_DIR/" \;
-          while IFS= read -r -d '' app; do rm -rf "$PROJECTS_DIR/$(basename "$app")"; cp -R "$app" "$PROJECTS_DIR/"; done < <(find "$ARTIFACTS_DIR/downloaded" -type d -name '*.app' -print0)
+          find "artifacts/downloaded" -type f \( -name '*.msi' -o -name '*.deb' -o -name '*.dmg' \) -exec cp -f {} "projects/" \;
+          while IFS= read -r -d '' app; do rm -rf "projects/$(basename "$app")"; cp -R "$app" "projects/"; done < <(find "artifacts/downloaded" -type d -name '*.app' -print0)
       - name: Validate projects directory
-        run: scripts/ci/validate-projects.sh "$PROJECTS_DIR" "$APP_NAME"
+        run: scripts/ci/validate-projects.sh "projects" "DevScout"
       - name: Commit generated installers
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$PROJECTS_DIR/"
+          git add "projects/"
           if git diff --staged --quiet; then echo "No generated installer changes to commit."; else git commit -m "Update DevScout installers [skip ci]"; git push origin "HEAD:${{ github.ref_name }}"; fi
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -165,9 +146,9 @@ jobs:
           tag_name: devscout-v${{ github.run_number }}
           name: DevScout Release v${{ github.run_number }}
           files: |
-            projects/devscout*.msi
-            projects/devscout*.deb
-            projects/devscout*.dmg
+            projects/DevScout*.msi
+            projects/DevScout*.deb
+            projects/DevScout*.dmg
           fail_on_unmatched_files: true
           generate_release_notes: true
         env:

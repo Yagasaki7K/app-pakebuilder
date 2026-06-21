@@ -66,32 +66,49 @@ case "$kind" in
     ;;
 esac
 
-echo "Searching for Pake outputs under: $search_root"
-find "$search_root" -maxdepth 8 \
-  \( -path "$search_root/.git" -o -path "$search_root/node_modules" -o -path "$search_root/$output_dir" \) -prune \
+search_root_abs=$(cd "$search_root" && pwd -P)
+output_dir_abs=$(mkdir -p "$output_dir" && cd "$output_dir" && pwd -P)
+
+should_prune=(
+  "$search_root_abs/.git"
+  "$search_root_abs/node_modules"
+  "$search_root_abs/projects"
+  "$search_root_abs/artifacts"
+  "$output_dir_abs"
+)
+
+find_prune_args=()
+for path_to_prune in "${should_prune[@]}"; do
+  find_prune_args+=( -path "$path_to_prune" -o )
+done
+unset 'find_prune_args[${#find_prune_args[@]}-1]'
+
+echo "Searching for fresh Pake outputs under: $search_root_abs"
+find "$search_root_abs" -maxdepth 8 \
+  \( "${find_prune_args[@]}" \) -prune \
   -o -print | sort
 
 file_count=0
 for pattern in "${patterns[@]}"; do
   while IFS= read -r -d '' file; do
-    cp -f "$file" "$output_dir/"
-    echo "Collected file: $file -> $output_dir/$(basename "$file")"
+    cp -f "$file" "$output_dir_abs/"
+    echo "Collected file: $file -> $output_dir_abs/$(basename "$file")"
     file_count=$((file_count + 1))
-  done < <(find "$search_root" -maxdepth 8 \
-    \( -path "$search_root/.git" -o -path "$search_root/node_modules" -o -path "$search_root/$output_dir" \) -prune \
+  done < <(find "$search_root_abs" -maxdepth 8 \
+    \( "${find_prune_args[@]}" \) -prune \
     -o -type f -name "$pattern" -print0)
 done
 
 app_count=0
 if [ "$require_app" = true ]; then
   while IFS= read -r -d '' app; do
-    destination="$output_dir/$(basename "$app")"
+    destination="$output_dir_abs/$(basename "$app")"
     rm -rf "$destination"
     cp -R "$app" "$destination"
     echo "Collected app bundle: $app -> $destination"
     app_count=$((app_count + 1))
-  done < <(find "$search_root" -maxdepth 8 \
-    \( -path "$search_root/.git" -o -path "$search_root/node_modules" -o -path "$search_root/$output_dir" \) -prune \
+  done < <(find "$search_root_abs" -maxdepth 8 \
+    \( "${find_prune_args[@]}" \) -prune \
     -o -type d -name '*.app' -print0)
 fi
 
@@ -106,4 +123,4 @@ if [ "$require_app" = true ] && [ "$app_count" -eq 0 ]; then
 fi
 
 echo "Collected artifact summary for $kind: files=$file_count apps=$app_count"
-find "$output_dir" -maxdepth 6 -print | sort
+find "$output_dir_abs" -maxdepth 6 -print | sort
