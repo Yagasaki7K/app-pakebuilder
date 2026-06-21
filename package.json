@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "build": "node scripts/build-site.mjs",
+    "preview": "node scripts/dev-server.mjs dist 4173",
+    "audit:workflows": "node scripts/ci/audit-workflows.mjs",
+    "test:artifact-flow": "bash scripts/ci/verify-artifact-flow.sh",
+    "test": "npm run audit:workflows && npm run test:artifact-flow && npm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

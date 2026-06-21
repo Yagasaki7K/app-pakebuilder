@@ -1,1 +1,6 @@
-artifacts/
+node_modules
+dist
+artifacts/*
+!artifacts/.gitkeep
+.DS_Store
+.env.local

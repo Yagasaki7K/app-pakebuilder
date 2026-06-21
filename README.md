@@ -1,156 +1,265 @@
-# App Pake Builder
+# Pake Application Hub
 
-App Pake Builder is a GitHub Actions release automation project that builds installable desktop packages from a website URL with Pake. The workflow currently builds Discord from `https://discord.com`, validates every required installer type, copies only final generated outputs into the repository-level `projects` directory, commits those generated outputs, and publishes a GitHub Release from that same `projects` directory.
+Pake Application Hub is an open-source automation repository that builds and publishes installable desktop wrappers for selected web applications. It is created and maintained by **Yagasaki7K**.
 
-## What Pake Is
+The repository combines GitHub Actions, Pake, and a modern dependency-free single page application so users can browse generated installers from one web catalog.
 
-Pake is an open-source command line tool that wraps web applications as lightweight desktop applications. It uses the Tauri ecosystem to package a website in a native shell, which can produce smaller applications than many Electron-based alternatives.
+## Project Overview
 
-Pake project: <https://github.com/tw93/Pake>
+This project provides a repeatable release pipeline for web applications that are useful as desktop apps. Each supported application has its own workflow under `.github/workflows` and each workflow builds native installer artifacts for Windows, Linux, and macOS.
 
-## Environment Configuration
+Final generated installers are stored in `/projects`. Temporary workflow files are stored in `/artifacts` and are not part of the published application catalog.
 
-The repository includes a committed `.env` file with non-secret defaults used by the application and release workflow documentation.
+## Features
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `NODE_VERSION` | `22` | Node.js version used by GitHub Actions and local Pake builds. |
-| `APP_URL` | `https://discord.com` | Web application URL that Pake wraps into native desktop packages. |
-| `APP_NAME` | `discord` | Stable Pake application name used to produce predictable installer filenames. |
-| `PROJECTS_DIR` | `projects` | Repository-root directory that stores only final generated installers and application bundles. |
-| `ARTIFACTS_DIR` | `artifacts` | Repository-root directory for temporary build output, diagnostics, and GitHub Actions artifact transfer. |
-| `GITHUB_TOKEN` | empty | Secret token used by GitHub release automation. The repository value is intentionally blank. |
+- One GitHub Actions workflow per application.
+- Windows `.msi`, Linux `.deb`, macOS `.dmg`, and macOS `.app` output validation.
+- Automatic cleanup and replacement of outdated installers for the application being rebuilt.
+- GitHub Release publication for generated installers.
+- Dependency-free SPA with responsive desktop and mobile design.
+- Automatic frontend discovery from `/projects` through a generated manifest.
+- Search, platform filters, download buttons, contribution guidance, and project information sections.
+- Professional contributor documentation for requesting new applications.
 
-Do not commit a real `GITHUB_TOKEN`. In GitHub Actions, the release job uses `${{ secrets.GITHUB_TOKEN }}` from the runner environment. For local testing, export a token in your shell only when a command explicitly requires GitHub API access.
+## What is Pake
 
-## Generated Outputs
+[Pake](https://github.com/tw93/Pake) is an open-source project that turns web pages into desktop applications with a command-line workflow. The Pake project describes itself as a way to turn any webpage into a desktop app with one command and supports macOS, Windows, and Linux.
 
-The workflow requires these final outputs in `projects` after a successful run:
+Pake is built around the Tauri ecosystem, which uses Rust and native webview capabilities to package web experiences as desktop applications. This repository uses the Pake CLI to wrap public web application URLs into native desktop installers.
 
-- Windows MSI installer: `.msi`
-- Linux Debian package: `.deb`
-- macOS disk image: `.dmg`
-- macOS application bundle: `.app`
+## How Pake Works
 
-The workflow fails before commit or release if any required output is missing from `projects`.
+At a high level, Pake receives a web URL and an application name, creates a desktop application shell for that URL, and builds platform-specific installable outputs. In this repository, every application workflow hardcodes the verified public URL directly in the workflow build command.
 
-## Directory Contract
+Example workflow build command:
 
-The workflow uses two root-level directories with separate responsibilities:
+```bash
+pake "https://chatgpt.com" --name "ChatGPT"
+```
 
-| Directory | Purpose |
-| --- | --- |
-| `projects` | Final generated installers and application bundles only. This directory is cleaned before each new collection and then repopulated with the newest generated outputs. |
-| `artifacts` | Temporary CI files, downloaded GitHub Actions artifacts, diagnostic output, and intermediate build collection files. This directory is ignored by Git. |
+Linux builds explicitly request Debian output:
 
-Nothing except final generated installers and `.app` bundles should remain in `projects`.
+```bash
+pake "https://chatgpt.com" --name "ChatGPT" --targets deb
+```
+
+## Why Pake Is Used
+
+Pake is used because it is designed for packaging websites as lightweight desktop apps. It allows this repository to maintain simple, URL-driven application workflows while still producing native installer artifacts for multiple operating systems.
 
 ## Supported Platforms
 
-The automation is designed for isolated GitHub-hosted runners and builds on the native operating system for each package type.
-
-| Platform | Runner | Generated artifact |
+| Platform | Runner | Output |
 | --- | --- | --- |
 | Windows | `windows-latest` | `.msi` |
 | Linux | `ubuntu-latest` | `.deb` |
-| macOS | `macos-latest` | `.app`, `.dmg` |
+| macOS | `macos-latest` | `.dmg` and `.app` |
 
-## Workflow Schedule
+## Available Applications
 
-The workflow lives at `.github/workflows/build-discord.yml` and runs on:
+The repository includes workflow and metadata entries for the following applications:
 
-- Pushes to `main` and `master`
-- Manual `workflow_dispatch` runs
-- A monthly schedule on the first day of each month at 00:00 UTC
+- 4chan
+- 9GAG
+- Ademicon
+- Amazon
+- AnimeFire
+- ChatGPT
+- Codex
+- Crunchyroll
+- DeepSeek
+- DevScout
+- Discord
+- Disney+
+- Facebook
+- Gemini
+- GeoGuessr
+- GitHub
+- HBO Max
+- iLovePDF
+- Instagram
+- Krea AI
+- Manga Livre
+- Manga Livre Blog
+- Mercado Livre
+- Netflix
+- Onigiri Hardcore
+- Photomosh
+- Radio Garden
+- Rocketseat
+- Shopee
+- Spotify
+- Twitter / X
+- WhatsApp Web
+- YouTube
 
-## How Installer Discovery Works
+The web catalog only displays applications that have generated installer files in `/projects`.
 
-Pake output locations can vary by operating system, target, and installed Pake version. The workflow does not assume a fixed output directory. After each native build job finishes, `scripts/ci/collect-pake-artifacts.sh` searches the checked-out workspace for the expected package type while excluding `.git`, `node_modules`, and the current staging directory.
+## Installation
 
-The collection script then copies discovered files into a platform-specific temporary directory under `artifacts`:
-
-- Windows: `artifacts/windows/*.msi`
-- Linux: `artifacts/linux/*.deb`
-- macOS: `artifacts/macos/*.dmg` and `artifacts/macos/*.app`
-
-If a build job cannot find its required output, that job fails immediately with a clear error.
-
-## How Artifact Transfer Works
-
-GitHub Actions jobs run on isolated runners, so files generated by one build job are not automatically available to the final release job. The workflow transfers outputs explicitly:
-
-1. Each native build job discovers Pake outputs.
-2. Each native build job copies those outputs into `artifacts/<platform>`.
-3. Each native build job uploads its platform directory with `actions/upload-artifact`.
-4. The final job downloads all uploaded artifacts into `artifacts/downloaded` with `actions/download-artifact`.
-5. The final job cleans `projects` and copies only `.msi`, `.deb`, `.dmg`, and `.app` outputs into `projects`.
-
-## How Validation Works
-
-The final job runs `scripts/ci/validate-projects.sh projects` before committing or releasing. The validation script verifies that:
-
-- `projects` exists.
-- At least one `.msi` file exists in `projects`.
-- At least one `.deb` file exists in `projects`.
-- At least one `.dmg` file exists in `projects`.
-- At least one `.app` bundle exists in `projects`.
-- `projects` contains no unexpected top-level entries.
-
-If any check fails, the workflow stops before commit and release.
-
-## Release Workflow
-
-After validation passes, the workflow configures automated commit authorship as Anderson Marlon, commits the refreshed `projects` directory back to the source branch when generated outputs changed, and creates a GitHub Release named from the workflow run number.
-
-Release uploads are read directly from `projects`:
-
-- `projects/*.msi`
-- `projects/*.deb`
-- `projects/*.dmg`
-
-The `.app` bundle remains committed in `projects` as a directory. GitHub Release assets are file-based, so the release attaches the installer files that are physically present and already validated in `projects`.
-
-## Installation Instructions
-
-End users can install generated packages from the GitHub Releases page or from the committed files in the `projects` directory after a successful workflow run.
+End users can download generated installers from the SPA catalog or from GitHub Releases after workflows have produced artifacts.
 
 ### Windows
 
-1. Download the `.msi` file from the latest release.
+1. Download the application `.msi` file.
 2. Open the installer.
-3. Follow the Windows installer prompts.
+3. Follow the Windows installation prompts.
 
 ### Linux
 
-1. Download the `.deb` file from the latest release.
+1. Download the application `.deb` file.
 2. Install it with apt:
 
-   ```bash
-   sudo apt install ./downloaded-file.deb
-   ```
+```bash
+sudo apt install ./application.deb
+```
 
 ### macOS
 
-1. Download the `.dmg` file from the latest release.
+1. Download the application `.dmg` file.
 2. Open the disk image.
-3. Drag the app into the Applications folder if prompted.
+3. Move the app to Applications if prompted.
 
-The generated `.app` bundle is also preserved in the committed `projects` directory after a successful workflow run.
+## Local Development
 
-## Contributing Guidelines
+Install dependencies:
 
-Contributions are welcome. Keep workflow changes focused, validate path handling, and avoid assuming where Pake writes generated output.
+```bash
+npm install
+```
 
-Recommended contribution workflow:
+Generate the local projects manifest:
+
+```bash
+node scripts/generate-projects-manifest.mjs
+```
+
+Run the SPA locally:
+
+```bash
+npm run dev
+```
+
+## Running the Web Version
+
+The web version is a dependency-free SPA served by the repository's Node.js development server. During startup and production builds, it reads `public/projects-manifest.json`, which is generated from the contents of `/projects`.
+
+If `/projects` has no installer files, the SPA still runs and shows an empty-state message explaining that workflows must generate installers first.
+
+## Building the Frontend
+
+Build the production frontend:
+
+```bash
+npm run build
+```
+
+The build command first runs `scripts/generate-projects-manifest.mjs`, then creates the static site in `dist`.
+
+## GitHub Actions Overview
+
+Each application has its own workflow named with this pattern:
+
+```text
+build-application-name.yaml
+```
+
+Examples:
+
+```text
+build-discord.yaml
+build-chatgpt.yaml
+build-spotify.yaml
+```
+
+Each workflow:
+
+1. Builds Windows `.msi` output on a Windows runner.
+2. Builds Linux `.deb` output on an Ubuntu runner.
+3. Builds macOS `.dmg` and `.app` output on a macOS runner.
+4. Uploads temporary build outputs through GitHub Actions artifacts.
+5. Downloads those outputs in a publish job.
+6. Copies final outputs into `/projects`.
+7. Validates required installer types.
+8. Commits changed generated installers.
+9. Publishes a GitHub Release.
+
+## Workflow Validation
+
+This repository includes validation utilities for release maintenance:
+
+```bash
+npm run audit:workflows
+npm run test:artifact-flow
+npm test
+```
+
+The workflow audit checks every application workflow for hardcoded URLs and Pake project names, verifies that Pake is installed with npm instead of pnpm, and confirms that upload, download, validation, and release steps reference valid repository scripts. The artifact-flow test simulates generated installer files, collects them through the same shell scripts used in CI, copies them into `/projects`, and validates that temporary files remain under `/artifacts`.
+
+## Release Process
+
+Application workflows are manually runnable with `workflow_dispatch` and also run on a monthly schedule. A successful release job updates `/projects` for the application being built, commits changed generated outputs, and creates a release tagged with the application slug and workflow run number.
+
+Release assets are uploaded from `/projects` using the generated `.msi`, `.deb`, and `.dmg` files.
+
+## Contributing
+
+Contributions are welcome. Keep changes focused, use English comments, and preserve the repository contracts:
+
+- `/projects` is for final generated installers and application bundles.
+- `/artifacts` is for temporary workflow output only.
+- Application URLs and Pake project names must be hardcoded directly in each workflow.
+- Do not add URL-related or application-name variables to `.env` or workflow-level application variables.
+- Do not create a generic application build workflow.
+
+## Creating New Applications
+
+To request or add a new application:
 
 1. Fork the repository.
-2. Create a feature branch.
-3. Make focused changes.
-4. Run the validation scripts or relevant GitHub Actions workflow before opening a pull request.
-5. Open a pull request that explains the root cause, implementation, and validation results.
+2. Create a branch for your change.
+3. Verify the public URL for the application.
+4. Create a workflow named `build-application-name.yaml`.
+5. Use the same structure as the existing application workflows.
+6. Install Pake CLI with `npm install --global pake-cli` in the workflow.
+7. Add metadata to `public/applications.json`.
+8. Run `npm test` locally.
+9. Open a Pull Request.
 
-When modifying automation, verify every path used by Pake, `upload-artifact`, `download-artifact`, copy operations, release uploads, and generated installer commits.
+Required workflow naming examples:
+
+```text
+build-discord.yaml
+build-chatgpt.yaml
+build-spotify.yaml
+```
+
+Required workflow structure:
+
+- `build-windows` job for `.msi` output.
+- `build-linux` job for `.deb` output.
+- `build-macos` job for `.dmg` and `.app` output.
+- `publish` job that validates, commits, and releases outputs.
+- No `APP_NAME`, `APP_URL`, `PNPM_HOME`, or `pnpm install -g` usage.
+
+## Pull Request Guidelines
+
+A Pull Request should include:
+
+- The application name.
+- The verified public URL.
+- The new workflow path.
+- Any metadata changes.
+- Validation commands and results.
+- A clear explanation of why the application is useful as a Pake desktop app.
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for the complete license text and copyright notice.
+This project is licensed under the MIT License. See [`LICENSE`](LICENSE) for details.
+
+## Credits
+
+- Created and maintained by **Yagasaki7K**.
+- Built with [Pake](https://github.com/tw93/Pake).
+- Frontend powered by modern browser APIs and Node.js build scripts.
+- Automation powered by GitHub Actions.

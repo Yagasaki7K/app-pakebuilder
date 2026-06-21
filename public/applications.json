@@ -1,0 +1,200 @@
+[
+  {
+    "slug": "discord",
+    "name": "Discord",
+    "url": "https://discord.com",
+    "description": "Communication platform for communities, voice channels, chat, and collaboration."
+  },
+  {
+    "slug": "crunchyroll",
+    "name": "Crunchyroll",
+    "url": "https://www.crunchyroll.com",
+    "description": "Anime streaming service for watching shows, movies, and simulcasts."
+  },
+  {
+    "slug": "whatsapp",
+    "name": "WhatsApp Web",
+    "url": "https://web.whatsapp.com",
+    "description": "Browser-based WhatsApp experience for messaging from the desktop."
+  },
+  {
+    "slug": "x",
+    "name": "Twitter / X",
+    "url": "https://x.com",
+    "description": "Social network for real-time posts, conversations, and news discovery."
+  },
+  {
+    "slug": "facebook",
+    "name": "Facebook",
+    "url": "https://www.facebook.com",
+    "description": "Social platform for communities, pages, groups, and personal updates."
+  },
+  {
+    "slug": "instagram",
+    "name": "Instagram",
+    "url": "https://www.instagram.com",
+    "description": "Photo, video, reels, and messaging social platform."
+  },
+  {
+    "slug": "9gag",
+    "name": "9GAG",
+    "url": "https://9gag.com",
+    "description": "Entertainment platform for memes, viral posts, and community discussions."
+  },
+  {
+    "slug": "4chan",
+    "name": "4chan",
+    "url": "https://www.4chan.org",
+    "description": "Imageboard communities organized by topic-specific boards."
+  },
+  {
+    "slug": "chatgpt",
+    "name": "ChatGPT",
+    "url": "https://chatgpt.com",
+    "description": "OpenAI conversational AI assistant for writing, coding, research, and productivity."
+  },
+  {
+    "slug": "deepseek",
+    "name": "DeepSeek",
+    "url": "https://chat.deepseek.com",
+    "description": "AI assistant and chat interface from DeepSeek."
+  },
+  {
+    "slug": "spotify",
+    "name": "Spotify",
+    "url": "https://open.spotify.com",
+    "description": "Web player for music, podcasts, playlists, and audio discovery."
+  },
+  {
+    "slug": "github",
+    "name": "GitHub",
+    "url": "https://github.com",
+    "description": "Developer platform for Git repositories, issues, pull requests, and collaboration."
+  },
+  {
+    "slug": "manga-livre",
+    "name": "Manga Livre",
+    "url": "https://mangalivre.net",
+    "description": "Manga reading website and catalog."
+  },
+  {
+    "slug": "manga-livre-blog",
+    "name": "Manga Livre Blog",
+    "url": "https://blog.mangalivre.net",
+    "description": "Blog companion site for Manga Livre news and updates."
+  },
+  {
+    "slug": "ilovepdf",
+    "name": "iLovePDF",
+    "url": "https://www.ilovepdf.com",
+    "description": "Online PDF tools for merging, splitting, compressing, and converting documents."
+  },
+  {
+    "slug": "youtube",
+    "name": "YouTube",
+    "url": "https://www.youtube.com",
+    "description": "Video platform for watching, publishing, and managing video content."
+  },
+  {
+    "slug": "radio-garden",
+    "name": "Radio Garden",
+    "url": "https://radio.garden",
+    "description": "Interactive globe for discovering live radio stations around the world."
+  },
+  {
+    "slug": "rocketseat",
+    "name": "Rocketseat",
+    "url": "https://www.rocketseat.com.br",
+    "description": "Brazilian technology education platform for developers."
+  },
+  {
+    "slug": "animefire",
+    "name": "AnimeFire",
+    "url": "https://animefire.plus",
+    "description": "Anime streaming and catalog website."
+  },
+  {
+    "slug": "amazon",
+    "name": "Amazon",
+    "url": "https://www.amazon.com.br",
+    "description": "Brazilian Amazon storefront for shopping and account access."
+  },
+  {
+    "slug": "mercado-livre",
+    "name": "Mercado Livre",
+    "url": "https://www.mercadolivre.com.br",
+    "description": "Latin American marketplace for shopping, selling, and account services."
+  },
+  {
+    "slug": "shopee",
+    "name": "Shopee",
+    "url": "https://shopee.com.br",
+    "description": "Brazilian Shopee marketplace for shopping, deals, and sellers."
+  },
+  {
+    "slug": "onigiri-hardcore",
+    "name": "Onigiri Hardcore",
+    "url": "https://www.onigirihardcore.com.br",
+    "description": "Brazilian entertainment and geek culture website."
+  },
+  {
+    "slug": "gemini",
+    "name": "Gemini",
+    "url": "https://gemini.google.com",
+    "description": "Google Gemini AI assistant for chat, writing, coding, and productivity."
+  },
+  {
+    "slug": "devscout",
+    "name": "DevScout",
+    "url": "https://devscout.com.br",
+    "description": "Developer-focused platform and community resource."
+  },
+  {
+    "slug": "krea-ai",
+    "name": "Krea AI",
+    "url": "https://www.krea.ai",
+    "description": "AI creative platform for image generation and visual workflows."
+  },
+  {
+    "slug": "photomosh",
+    "name": "Photomosh",
+    "url": "https://photomosh.com",
+    "description": "Creative browser tool for glitch, video, and image effects."
+  },
+  {
+    "slug": "codex",
+    "name": "Codex",
+    "url": "https://chatgpt.com/codex",
+    "description": "OpenAI Codex experience for coding assistance and software tasks."
+  },
+  {
+    "slug": "netflix",
+    "name": "Netflix",
+    "url": "https://www.netflix.com",
+    "description": "Streaming service for movies, series, and entertainment."
+  },
+  {
+    "slug": "hbo-max",
+    "name": "HBO Max",
+    "url": "https://www.max.com",
+    "description": "Max streaming service for HBO, movies, series, and entertainment."
+  },
+  {
+    "slug": "disney-plus",
+    "name": "Disney+",
+    "url": "https://www.disneyplus.com",
+    "description": "Disney streaming service for Disney, Pixar, Marvel, Star Wars, and more."
+  },
+  {
+    "slug": "geoguessr",
+    "name": "GeoGuessr",
+    "url": "https://www.geoguessr.com",
+    "description": "Geography game and exploration platform based on map challenges."
+  },
+  {
+    "slug": "ademicon",
+    "name": "Ademicon",
+    "url": "https://www.ademicon.com.br",
+    "description": "Brazilian consortium and financial services platform."
+  }
+]
