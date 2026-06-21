@@ -79,7 +79,7 @@ jobs:
 
   publish:
     name: Commit projects directory and publish release
-    needs: [build-windows, build-linux, build-macos]
+    needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
