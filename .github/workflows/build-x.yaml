@@ -1,5 +1,8 @@
 name: Build Twitter / X Pake Installers
 
+on: 
+  workflow_dispatch:
+  
 permissions:
   contents: read
 

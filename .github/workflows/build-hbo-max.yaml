@@ -1,5 +1,8 @@
 name: Build HBO Max Pake Installers
 
+on: 
+  workflow_dispatch:
+  
 permissions:
   contents: read
 

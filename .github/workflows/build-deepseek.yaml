@@ -1,5 +1,8 @@
 name: Build DeepSeek Pake Installers
 
+on: 
+  workflow_dispatch:
+  
 permissions:
   contents: read
 

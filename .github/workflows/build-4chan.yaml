@@ -1,5 +1,8 @@
 name: Build 4chan Pake Installers
 
+on: 
+  workflow_dispatch:
+  
 permissions:
   contents: read
 
