@@ -6,18 +6,20 @@
 
 Pake Application Hub is an open-source automation repository that builds and publishes installable desktop wrappers for selected web applications. It is created and maintained by **Yagasaki7K**.
 
-The repository combines GitHub Actions, Pake, and a modern dependency-free single page application so users can browse generated installers from one web catalog.
+The repository combines GitHub Actions and Pake.
 
 ## Project Overview
 
-This project provides a repeatable release pipeline for web applications that are useful as desktop apps. Each supported application has its own workflow under `.github/workflows` and each workflow builds native installer artifacts for Windows, Linux, and macOS.
+This project provides a repeatable release pipeline for web applications that are useful as desktop apps. Each supported application has its own workflow under `.github/workflows` and each workflow builds native installer artifacts for Windows and Linux.
 
 Final generated installers are stored in `/projects`. Temporary workflow files are stored in `/artifacts` and are not part of the published application catalog.
+
+![](https://raw.githubusercontent.com/tw93/static/main/pake/YouTube.jpg)
 
 ## Features
 
 - One GitHub Actions workflow per application.
-- Windows `.msi`, and Linux `.deb` output validation.
+- Windows `.msi` and Linux `.deb` output validation.
 - Automatic cleanup and replacement of outdated installers for the application being rebuilt.
 - GitHub Release publication for generated installers.
 - Dependency-free SPA with responsive desktop and mobile design.
@@ -27,7 +29,7 @@ Final generated installers are stored in `/projects`. Temporary workflow files a
 
 ## What is Pake
 
-[Pake](https://github.com/tw93/Pake) is an open-source project that turns web pages into desktop applications with a command-line workflow. The Pake project describes itself as a way to turn any webpage into a desktop app with one command and supports macOS, Windows, and Linux.
+[Pake](https://github.com/tw93/Pake) is an open-source project that turns web pages into desktop applications with a command-line workflow. The Pake project describes itself as a way to turn any webpage into a desktop app with one command and supports Windows and Linux.
 
 Pake is built around the Tauri ecosystem, which uses Rust and native webview capabilities to package web experiences as desktop applications. This repository uses the Pake CLI to wrap public web application URLs into native desktop installers.
 
@@ -58,6 +60,8 @@ Pake is used because it is designed for packaging websites as lightweight deskto
 | Windows | `windows-latest` | `.msi` |
 | Linux | `ubuntu-latest` | `.deb` |
 
+![](https://raw.githubusercontent.com/tw93/static/main/pake/ChatGPT.png)
+
 ## Available Applications
 
 The repository includes workflow and metadata entries for the following applications:
@@ -70,9 +74,9 @@ The repository includes workflow and metadata entries for the following applicat
 - [AnimeFire (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/animefire.msi)
 - [ChatGPT (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/chatgpt.msi)
 - [Codex (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/codex.msi)
+- [Crunchyroll (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/crunchyroll.msi)
 - [DevScout (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/devscout.msi)
 - [Discord (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/discord.msi)
-- [Crunchyroll (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/crunchyroll.msi)
 - [DeepSeek (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/deepseek.msi)
 - [Disney+ (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/disney-plus.msi)
 - [Facebook (Windows)](https://github.com/Yagasaki7K/app-pakebuilder/raw/refs/heads/main/projects/facebook.msi)
@@ -296,3 +300,5 @@ This project is licensed under the MIT License. See [`LICENSE`](LICENSE) for det
 - Built with [Pake](https://github.com/tw93/Pake).
 - Frontend powered by modern browser APIs and Node.js build scripts.
 - Automation powered by GitHub Actions.
+
+![](https://raw.githubusercontent.com/tw93/static/main/pake/Excalidraw.png)
